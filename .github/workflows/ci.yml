@@ -72,7 +72,6 @@ jobs:
 
       # Create .env
       - name: Create .env
-        working-directory: playwright
 
         run: |
           cd sdet-retail-app
