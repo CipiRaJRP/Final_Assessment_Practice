@@ -1,0 +1,21 @@
+[INFO - 22:46:47] Test Started {null
+[INFO - 22:46:48] Opening ShopKart home page {null
+[INFO - 22:46:48] Navigating to login page {null
+[INFO - 22:46:48] Verified login page loaded {null
+[INFO - 22:46:48] Entering user credentials with {null
+[INFO - 22:46:48] [object Object] {null
+[INFO - 22:46:48] Submitting login {null
+[INFO - 22:46:48] Searching product: Lamp {null
+[INFO - 22:46:48] Verified exactly one matching product is displayed {null
+[INFO - 22:46:48] Opening product details page {null
+[INFO - 22:46:48] Verified product details page {null
+[INFO - 22:46:48] Adding product to cart {null
+[INFO - 22:46:48] Verified cart page {null
+[INFO - 22:46:48] Proceeding to checkout {null
+[INFO - 22:46:48] Verified checkout page {null
+[INFO - 22:46:48] Entering shipping address: ABC Colony,Ambur,Chennai {null
+[INFO - 22:46:48] Placing order {null
+[INFO - 22:46:48] Verified order confirmation page {null
+[INFO - 22:46:48] Verified order status is PLACED {null
+[INFO - 22:46:48]  -----✅ ShopKart Validation completed successfully----- {null
+[INFO - 22:46:48] Test passed {null

@@ -1,73 +1,108 @@
-import { expect, test as base } from '@playwright/test';
-import crypto from 'node:crypto';
-import { type Applogger, logger, redactForLog } from '../src/logger';
-
-type DiagnosticFixtures = {
-  correlationId: string;
-  log: Applogger;
+import { test as base, expect } from "@playwright/test";
+import fs from "fs";
+import path from "path";
+import { logger, AppLogger } from "../src/logger";
+import { level } from "winston";
+ 
+type LogEntry = {
+  step: number;
+  timestamp: string;
+  message: string;
+  maskedData?: Record<string, unknown>;
 };
-
+ 
+type DiagnosticFixtures = {
+  log: AppLogger;
+};
+ 
+const SENSITIVE_DATA_MASK = "[SENSITIVE_DATA_MASKED]";
+ 
+function maskSensitiveData(
+  data: Record<string, unknown>
+): Record<string, unknown> {
+  const sensitiveKeys = [
+    "password",
+    "token",
+    "secret",
+    "apikey",
+    "api_key",
+    "authorization",
+  ];
+ 
+  return Object.fromEntries(
+    Object.entries(data).map(([key, value]) => {
+      if (sensitiveKeys.includes(key.toLowerCase())) {
+        return [key, SENSITIVE_DATA_MASK];
+      }
+ 
+      return [key, value];
+    })
+  );
+}
+ 
 export const test = base.extend<DiagnosticFixtures>({
-  correlationId: async ({}, use) => {
-    await use(crypto.randomUUID());
-  },
-
-  log: async ({ page, correlationId }, use, testInfo) => {
-    await page.setExtraHTTPHeaders({
-      'x-correlation-id': correlationId,
-    });
-
-    const baseMeta = {
-      correlationId,
-      testTitle: testInfo.project.name,
-      service: 'sdet-retail-playwright',
-      specFile: testInfo.file,
-      testId: testInfo.title,
-      workerIndex: testInfo.workerIndex,
-    };
-
-    const log = logger.child(baseMeta);
-    const lines: string[] = [];
-    const diagnosticLog = log as Applogger & Record<string, unknown>;
-
-    for (const level of ['error', 'warn', 'info', 'http', 'debug'] as const) {
-      const originalMethod = (log as unknown as { [key: string]: unknown })[level] as
-        | ((message: string, meta?: Record<string, unknown>) => unknown)
-        | undefined;
-
-      diagnosticLog[level] = ((message: string, meta: Record<string, unknown> = {}) => {
-        if (log.isLevelEnabled(level)) {
-          lines.push(
-            JSON.stringify(
-              redactForLog({
-                ...baseMeta,
-                ...meta,
-                level,
+  log: async ({ }, use, testInfo) => {
+    const timeline: LogEntry[] = [];
+    let step = 1;
+ 
+    const diagnosticLog = logger.child({});
+ 
+    diagnosticLog.info = ((message: string, meta: Record<string, unknown> = {}) => {
+                const maskedData =  Object.keys(meta).length !== 0 ? maskSensitiveData(meta) : null;
+       
+ 
+              const entry: LogEntry = {
+                step: step++,
+                timestamp: new Date().toLocaleTimeString("en-GB", {
+                  hour12: false,
+                }),
                 message,
-                timestamp: new Date().toISOString(),
-              })
-            )
-          );
-        }
-
-        originalMethod?.(message, meta);
-        return diagnosticLog;
-      }) as unknown as Applogger[keyof Applogger];
-    }
-
-    diagnosticLog.info('test started');
-
-    await use(diagnosticLog as Applogger);
-
-    diagnosticLog.info('test finished', { status: testInfo.status ?? 'unknown' });
-
-    if (testInfo.status !== testInfo.expectedStatus && lines.length > 0) {
-      await testInfo.attach('log.ndjson', {
-        body: lines.join('\n'),
-        contentType: 'application/json',
-      });
-    }
+                maskedData,
+              };
+              timeline.push(entry);
+ 
+              console.log(
+                `[${level.toUpperCase()} - ${entry.timestamp}] ${entry.message} ${entry.maskedData
+                                                                                          ? `\n${Object.entries(entry.maskedData)
+                                                                                          .map(([key, value]) => `${key}: ${String(value)}`)
+                                                                                          .join("\n")}`
+                                                                                          : ""}`
+              );
+      return diagnosticLog;
+    }) as any;
+ 
+    diagnosticLog.info("Test Started");
+ 
+    await use(diagnosticLog);
+ 
+    diagnosticLog.info(`Test ${testInfo.status}`);
+ 
+    console.log(`\nExecution Timeline — ${testInfo.title}\n`);
+ 
+    const txtContent = timeline
+      .map(
+        (entry) =>
+          `[${level.toUpperCase()} - ${entry.timestamp}] ${entry.message} {${entry.maskedData}`
+      )
+      .join("\n");
+ 
+    const logsDir = path.join(process.cwd(), "logs");
+ 
+    fs.mkdirSync(logsDir, { recursive: true });
+ 
+    const fileName = `${testInfo.title.replace(/\s+/g, "_")}-log.txt`;
+ 
+    fs.writeFileSync(
+      path.join(logsDir, fileName),
+      txtContent,
+      "utf8"
+    );
+ 
+    await testInfo.attach("execution-log.txt", {
+      body: txtContent,
+      contentType: "text/plain",
+    });
   },
 });
-
+ 
 export { expect };
