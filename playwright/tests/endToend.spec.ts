@@ -2,8 +2,12 @@ import { test, expect } from "../fixtures/shopfixtures";
 import { Secrets } from "../src/secrets";
 import { Util } from "../src/utils";
 import { testdata } from "../src/testdata";
+import { redactSensitiveFields } from "../src/logger";
 
-test('ShopKart Validation', async ({ shop, log, page }) => {
+
+
+
+test('ShopKart Validation', async ({ shop, log, page ,evidence}) => {
 
     log.info("Opening ShopKart home page");
     await shop.openHomePage();
@@ -14,13 +18,15 @@ test('ShopKart Validation', async ({ shop, log, page }) => {
     log.info("Verified login page loaded");
 
     log.info("Entering user credentials with");
-//     log.info({
-//   email: Util.emailName(testdata.username1.name),
-//   password: Secrets.get(`${testdata.username1.name}_PASSWORD`)
-// });
+ const loginCredentials = {
+  email: Util.emailName(testdata.username1.name),
+  password: Secrets.get(`SHOPKART_${testdata.username1.name}_PASSWORD`)
+};
+
+evidence.loginCredentials = redactSensitiveFields(loginCredentials);
     await shop.enterEmailAndPassword(
         Util.emailName(testdata.username1.name),
-        Secrets.get(`${testdata.username1.name}_PASSWORD`)
+        Secrets.get(`SHOPKART_${testdata.username1.name}_PASSWORD`)
     );
     log.info("Submitting login");
     await shop.clickOnSignIn();

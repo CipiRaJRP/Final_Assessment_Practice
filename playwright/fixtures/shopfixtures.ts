@@ -1,4 +1,4 @@
-import {test as base} from '../fixtures/diagnostic-test'
+import {test as base} from '../fixtures/artifact-fixture'
 import { shopflow } from '../flows/shopflow';
 
 type PageFixtures = {
