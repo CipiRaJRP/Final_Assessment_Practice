@@ -48,6 +48,8 @@ jobs:
 
       # Install Playwright dependencies
       - name: Install Playwright Dependencies
+        working-directory: playwright
+
         run: npm install
 
       # Install ShopKart root dependencies
