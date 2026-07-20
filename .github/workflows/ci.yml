@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-
   pull_request:
     branches:
       - main
@@ -27,21 +26,15 @@ jobs:
       - name: Create .env
         working-directory: api_restassured
         run: |
-         cat << EOF > .env
-         BASE_URL=${{ vars.BASE_API_URL }}
-         EOF    
+          echo "BASE_URL=${{ vars.BASE_API_URL }}" > .env
 
       - name: Create secrets.local.properties
         working-directory: api_restassured
         run: |
-          cat << EOF > secrets.local.properties
-          PASSWORD=${{ secrets.PASSWORD }}
-          EOF
+          echo "PASSWORD=${{ secrets.PASSWORD }}" > secrets.local.properties
 
       - name: Run Maven Tests
         working-directory: api_restassured
-        env:
-          BASE_URL: ${{ vars.BASE_API_URL }}
         run: mvn clean test
 
       - name: Generate Allure Report
