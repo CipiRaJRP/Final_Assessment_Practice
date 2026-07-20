@@ -1,0 +1,61 @@
+name: Playwright UI Tests
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  ui-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: playwright/package-lock.json
+
+      - name: Create .env
+        working-directory: playwright
+        run: |
+          echo "BASE_URL=${{ vars.BASE_URL }}" > .env
+
+      - name: Create secrets.local.env
+        working-directory: playwright
+        run: |
+          echo "PASSWORD=${{ secrets.PASSWORD }}" > secrets.local.env
+
+      - name: Install Dependencies
+        working-directory: playwright
+        run: npm ci
+
+      - name: Install Browsers
+        working-directory: playwright
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright Test
+        working-directory: playwright
+        run: npx playwright test ./tests/finalcapstone.spec.ts
+
+      - name: Upload Playwright Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright/playwright-report
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: playwright/test-results
