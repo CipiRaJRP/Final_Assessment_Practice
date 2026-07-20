@@ -33,6 +33,7 @@ build/
 !**/src/test/**/build/
 
 ### VS Code ###
+.env
 .vscode/
 secrets.local.properties
 ### Mac OS ###
