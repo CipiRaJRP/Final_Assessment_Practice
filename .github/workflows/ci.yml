@@ -24,6 +24,13 @@ jobs:
           java-version: '22'
           cache: maven
 
+      - name: Create .env
+        working-directory: api_restassured
+        run: |
+         cat << EOF > .env
+         BASE_URL=${{ vars.BASE_API_URL }}
+         EOF    
+
       - name: Create secrets.local.properties
         working-directory: api_restassured
         run: |
